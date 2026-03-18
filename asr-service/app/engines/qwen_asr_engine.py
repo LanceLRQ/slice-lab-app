@@ -1,4 +1,5 @@
 import logging
+import warnings
 import torch
 from app.utils.model_manager import ensure_model
 from app.config import MODEL_REPO_MAP, MODEL_LOCAL_MAP, MODEL_SOURCE
@@ -58,11 +59,8 @@ class QwenASREngine:
 
         self._model = Qwen3ASRModel.from_pretrained(**load_kwargs)
 
-        # 消除 "Setting pad_token_id to eos_token_id" 警告
-        if hasattr(self._model, "model") and hasattr(self._model.model, "config"):
-            config = self._model.model.config
-            if config.pad_token_id is None and config.eos_token_id is not None:
-                config.pad_token_id = config.eos_token_id
+        # 抑制 transformers 每次 generate 时的 pad_token_id 警告
+        logging.getLogger("transformers.generation.utils").setLevel(logging.ERROR)
 
         logger.info(
             f"Qwen ASR 模型已加载: size={self._model_size}, "

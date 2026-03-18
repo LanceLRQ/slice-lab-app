@@ -64,6 +64,7 @@ class ASRPipeline:
 
             # 检查音频时长
             duration = get_audio_duration(wav_path)
+            logger.info(f"[Pipeline] 音频转换完成: 时长={duration:.1f}s, 路径={wav_path}")
             if duration < MIN_AUDIO_DURATION:
                 raise ValueError(f"音频过短（{duration:.1f}s），最短要求 {MIN_AUDIO_DURATION}s")
             if duration > MAX_AUDIO_DURATION:
@@ -75,6 +76,7 @@ class ASRPipeline:
             if progress_callback:
                 progress_callback(0.1)
             vad_segments = self.vad.detect(wav_path)
+            logger.info(f"[Pipeline] VAD 检测完成: {len(vad_segments)} 个语音段")
 
             if not vad_segments:
                 logger.info(f"VAD 未检测到语音段: {audio_path}")
@@ -89,10 +91,16 @@ class ASRPipeline:
             # 2. 超长 segment 二次切分 + 写入 chunk 文件
             chunks = self._split_segments_to_chunks(wav_path, vad_segments, chunk_dir)
             total_chunks = len(chunks)
+            logger.info(f"[Pipeline] 切片完成: {len(vad_segments)} 个 VAD 段 -> {total_chunks} 个 chunk (超长阈值={MAX_SEGMENT_DURATION}s)")
 
             # 3. 逐 chunk ASR 识别
             segments = []
             for i, chunk_info in enumerate(chunks):
+                logger.info(
+                    f"[Pipeline] ASR 处理中: chunk {i + 1}/{total_chunks} "
+                    f"({chunk_info['offset_sec']:.1f}s ~ "
+                    f"{chunk_info['offset_sec'] + chunk_info['duration_sec']:.1f}s)"
+                )
                 try:
                     results = self.asr.transcribe(
                         audio_path=chunk_info["path"],
@@ -123,12 +131,17 @@ class ASRPipeline:
 
             # 4. 标点恢复（可选）
             if self.punc:
+                punc_count = 0
                 for seg in segments:
                     if seg["text"] and seg["text"] != "[识别失败]":
                         try:
+                            original = seg["text"]
                             seg["text"] = self.punc.restore(seg["text"])
+                            if seg["text"] != original:
+                                punc_count += 1
                         except Exception as e:
                             logger.warning(f"标点恢复失败，使用原始文本: {e}")
+                logger.info(f"[Pipeline] 标点恢复完成: {punc_count}/{len(segments)} 个段落有变化")
 
             # 5. 合并全文
             full_text = "".join(seg["text"] for seg in segments if seg["text"] != "[识别失败]")
