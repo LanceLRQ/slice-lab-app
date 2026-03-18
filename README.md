@@ -110,7 +110,7 @@ bash start.sh --host 0.0.0.0 --port 9000
 ### 3. 验证服务
 
 ```bash
-curl http://127.0.0.1:8765/health
+curl http://127.0.0.1:8765/v1/health
 ```
 
 响应示例：
@@ -195,14 +195,14 @@ CPU 模式使用的 OpenVINO 模型：
 ### 提交 ASR 任务
 
 ```bash
-curl -X POST http://127.0.0.1:8765/asr \
+curl -X POST http://127.0.0.1:8765/v1/asr \
   -F "file=@/path/to/audio.wav"
 ```
 
 带可选参数：
 
 ```bash
-curl -X POST http://127.0.0.1:8765/asr \
+curl -X POST http://127.0.0.1:8765/v1/asr \
   -F "file=@/path/to/audio.mp3" \
   -F "language=zh"
 ```
@@ -223,7 +223,7 @@ curl -X POST http://127.0.0.1:8765/asr \
 ### 查询任务状态
 
 ```bash
-curl http://127.0.0.1:8765/asr/{task_id}
+curl http://127.0.0.1:8765/v1/asr/{task_id}
 ```
 
 响应（完成）：
@@ -260,8 +260,34 @@ curl http://127.0.0.1:8765/asr/{task_id}
 ### 健康检查
 
 ```bash
-curl http://127.0.0.1:8765/health
+curl http://127.0.0.1:8765/v1/health
 ```
+
+响应：
+
+```json
+{
+  "status": "ready",
+  "device": "cuda",
+  "model_size": "0.6b",
+  "align_enabled": true,
+  "punc_enabled": false,
+  "asr_backend": "qwen_asr",
+  "vad_backend": "pytorch",
+  "punc_backend": "pytorch"
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| status | 服务状态，`ready` 表示就绪 |
+| device | 运行设备，`cuda` 或 `cpu` |
+| model_size | ASR 模型大小，`0.6b` 或 `1.7b` |
+| align_enabled | 是否启用对齐模型（单词级时间戳） |
+| punc_enabled | 是否启用标点恢复 |
+| asr_backend | ASR 后端，`qwen_asr` 或 `openvino` |
+| vad_backend | VAD 后端，`pytorch` 或 `onnx` |
+| punc_backend | 标点后端，`pytorch`、`onnx` 或 `disabled` |
 
 ## Web UI
 

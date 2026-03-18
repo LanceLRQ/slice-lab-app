@@ -7,7 +7,7 @@ from app.api.schemas import ASRResponse, TaskStatusResponse, HealthResponse
 from app.config import UPLOADS_DIR, MAX_AUDIO_FILE_SIZE
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(prefix="/v1")
 
 # 支持的音频文件扩展名
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".flac", ".m4a", ".aac", ".ogg", ".wma", ".amr", ".opus"}
