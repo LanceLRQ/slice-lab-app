@@ -1,0 +1,22 @@
+# 核心
+torch
+torchaudio
+qwen-asr
+funasr
+onnxruntime
+
+# Web 框架
+fastapi
+uvicorn[standard]
+python-multipart
+
+# 音频处理
+soundfile
+librosa
+
+# OpenVINO（CPU 推理）
+openvino>=2024.0
+
+# 模型管理
+huggingface_hub
+modelscope
