@@ -45,11 +45,9 @@ echo "[INFO] 安装项目依赖..."
 pip install -r requirements.txt
 
 # 6. 创建必要目录
-mkdir -p models/asr/0.6b models/asr/1.7b models/align/0.6b models/vad/fsmn models/vad/fsmn-onnx models/punc/ct-transformer models/punc/ct-transformer-onnx cache/uploads cache/audio_chunks cache/results logs
+mkdir -p models/asr/0.6b models/asr/1.7b models/align/0.6b models/vad/fsmn models/vad/fsmn-onnx models/punc/ct-transformer models/punc/ct-transformer-onnx logs
 
 # 7. 选择模型下载方式
-CONFIG_FILE="app/config.py"
-
 echo ""
 echo "=========================================="
 echo "  模型配置"
@@ -120,11 +118,11 @@ case $MODEL_CHOICE in
         ;;
 esac
 
-# 写入配置
-sed -i "s/^MODEL_SOURCE = .*/MODEL_SOURCE = \"$MODEL_SOURCE\"/" "$CONFIG_FILE"
-echo "[INFO] 已写入配置: MODEL_SOURCE = \"$MODEL_SOURCE\""
-
 echo ""
 echo "=========================================="
 echo "  环境初始化完成"
 echo "=========================================="
+echo ""
+echo "启动服务时请通过 --model-source 指定下载源："
+echo "  bash start.sh --model-source $MODEL_SOURCE"
+echo ""

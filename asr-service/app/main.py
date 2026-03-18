@@ -72,7 +72,6 @@ def create_app(args=None) -> FastAPI:
     device_info = detect_device()
     device = resolve_device(args.device)
     is_cpu = device == "cpu"
-    use_onnx = is_cpu
     vram_gb = device_info.get("vram_gb")
 
     # 自动选择模型大小
@@ -90,14 +89,14 @@ def create_app(args=None) -> FastAPI:
 
     logger.info(
         f"运行配置: device={device}, model_size={model_size}, "
-        f"align={enable_align}, punc={enable_punc}, onnx={use_onnx}"
+        f"align={enable_align}, punc={enable_punc}"
     )
 
     # 5. 加载引擎
     device_map = "cuda:0" if device == "cuda" else "cpu"
 
     # VAD 引擎（必须）
-    vad_engine = VADEngine(use_onnx=use_onnx)
+    vad_engine = VADEngine()
     try:
         vad_engine.load()
     except Exception as e:
@@ -128,7 +127,7 @@ def create_app(args=None) -> FastAPI:
     # 标点引擎（可选）
     punc_engine = None
     if enable_punc:
-        punc_engine = PuncEngine(use_onnx=use_onnx)
+        punc_engine = PuncEngine()
         try:
             punc_engine.load()
         except Exception as e:
@@ -168,8 +167,8 @@ def create_app(args=None) -> FastAPI:
         "align_enabled": enable_align,
         "punc_enabled": enable_punc,
         "asr_backend": asr_backend,
-        "vad_backend": "onnx" if use_onnx else "pytorch",
-        "punc_backend": "onnx" if (use_onnx and enable_punc) else ("pytorch" if enable_punc else "disabled"),
+        "vad_backend": VADEngine.BACKEND,
+        "punc_backend": PuncEngine.BACKEND if enable_punc else "disabled",
     }
 
     # 9. 创建 FastAPI 应用

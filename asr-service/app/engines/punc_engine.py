@@ -7,11 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 class PuncEngine:
-    """CT-Transformer 标点恢复引擎"""
+    """CT-Transformer 标点恢复引擎（始终使用 PyTorch 后端）"""
 
-    def __init__(self, use_onnx: bool = False):
-        self._use_onnx = use_onnx
-        # FunASR 1.3.1 不支持 ONNX 标点模型，统一使用 PyTorch 版本
+    BACKEND = "pytorch"
+
+    def __init__(self):
         self._model_key = "punc"
         self._model = None
 

@@ -44,7 +44,7 @@ class TaskManager:
         with self._lock:
             self._tasks[task_id] = task
 
-        self._queue.put(task_id)
+        self._queue.put_nowait(task_id)  # 队列满时抛出 queue.Full
         logger.info(f"任务已提交: {task_id}")
         return task_id
 
