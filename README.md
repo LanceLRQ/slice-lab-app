@@ -19,6 +19,20 @@
 - NVIDIA GPU + CUDA 12.1+（GPU 模式需要）
 - OpenVINO >= 2024.0（CPU 模式需要，pip install 自动安装）
 
+### GPU 模式 PyTorch 版本要求
+
+| CUDA 版本 | PyTorch 版本 |
+|-----------|-------------|
+| CUDA 12.4 | `torch==2.6.0+cu124` |
+| CUDA 12.1 | `torch==2.5.1+cu121` |
+
+安装示例（CUDA 12.4）：
+```bash
+pip install torch==2.6.0+cu124 torchaudio==2.6.0+cu124 --index-url https://download.pytorch.org/whl/cu124
+```
+
+> 注意：`qwen-asr` 需要 PyTorch 2.6+ 或 2.5.1+cu121，`funasr==1.3.1` 才能正常工作。
+
 ```bash
 # 安装 ffmpeg (Ubuntu/Debian)
 apt install ffmpeg
@@ -29,7 +43,25 @@ nvidia-smi
 
 ## 快速开始
 
-### 1. 初始化环境
+### Windows 部署（Python Embeddable）
+
+Windows 可使用 Python Embeddable Package 实现独立便携部署：
+
+1. 下载 [Python 3.12 Embeddable Package](https://www.python.org/downloads/windows/) 放入 `bin/` 目录
+2. 下载 [ffmpeg](https://www.gyan.dev/ffmpeg/builds/) 并将 `ffmpeg.exe` 放入 `bin/` 目录
+3. 运行初始化脚本：
+   ```cmd
+   cd asr-service
+   setup.bat
+   ```
+4. 启动服务：
+   ```cmd
+   start.bat --device cuda --model-size 0.6b --host 0.0.0.0
+   ```
+
+### Linux 部署
+
+#### 1. 初始化环境
 
 ```bash
 cd asr-service
