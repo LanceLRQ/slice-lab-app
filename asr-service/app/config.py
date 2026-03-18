@@ -70,7 +70,8 @@ MIN_AUDIO_DURATION = 1.0        # 最短音频时长（秒）
 
 # ─── 缓存路径 ───
 
-CACHE_DIR = os.path.join(BASE_DIR, "cache")
+import tempfile
+CACHE_DIR = os.path.join(tempfile.gettempdir(), "asr-service")
 UPLOADS_DIR = os.path.join(CACHE_DIR, "uploads")
 AUDIO_CHUNKS_DIR = os.path.join(CACHE_DIR, "audio_chunks")
 RESULTS_DIR = os.path.join(CACHE_DIR, "results")
