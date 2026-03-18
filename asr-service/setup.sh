@@ -42,10 +42,10 @@ fi
 
 # 5. 安装其他依赖
 echo "[INFO] 安装项目依赖..."
-pip install transformers fastapi "uvicorn[standard]" soundfile librosa openvino huggingface_hub modelscope python-multipart
+pip install -r requirements.txt
 
 # 6. 创建必要目录
-mkdir -p models/asr/0.6b models/asr/1.7b models/align/0.6b models/vad/fsmn models/punc/ct-transformer cache/audio_chunks cache/results logs
+mkdir -p models/asr/0.6b models/asr/1.7b models/align/0.6b models/vad/fsmn models/vad/fsmn-onnx models/punc/ct-transformer models/punc/ct-transformer-onnx cache/uploads cache/audio_chunks cache/results logs
 
 # 7. 选择模型下载方式
 CONFIG_FILE="app/config.py"

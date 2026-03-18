@@ -1,5 +1,1 @@
-from app.engines.qwen_asr_engine import QwenASREngine
-from app.engines.vad_engine import VADEngine
-from app.engines.punc_engine import PuncEngine
-
-__all__ = ["QwenASREngine", "VADEngine", "PuncEngine"]
+# 引擎模块 - 按需导入，避免启动时缺少依赖报错

@@ -13,7 +13,7 @@ DEVICE = "auto"                 # "auto" | "cuda" | "cpu"
 ASR_MODEL_SIZE = "0.6b"         # "0.6b" | "1.7b"
 ENABLE_ALIGN = True             # 是否加载对齐模型
 ENABLE_PUNC = True              # 是否启用标点恢复
-MODEL_SOURCE = "modelscope"     # "modelscope" | "huggingface"
+MODEL_SOURCE = "modelscope"
 
 # ─── 模型路径 ───
 

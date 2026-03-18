@@ -57,6 +57,13 @@ class QwenASREngine:
                 self._enable_align = False
 
         self._model = Qwen3ASRModel.from_pretrained(**load_kwargs)
+
+        # 消除 "Setting pad_token_id to eos_token_id" 警告
+        if hasattr(self._model, "model") and hasattr(self._model.model, "config"):
+            config = self._model.model.config
+            if config.pad_token_id is None and config.eos_token_id is not None:
+                config.pad_token_id = config.eos_token_id
+
         logger.info(
             f"Qwen ASR 模型已加载: size={self._model_size}, "
             f"device={self._device}, align={self._enable_align}"

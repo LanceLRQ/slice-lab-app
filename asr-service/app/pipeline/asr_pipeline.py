@@ -210,11 +210,15 @@ class ASRPipeline:
         if isinstance(results, list):
             texts = []
             for item in results:
-                if isinstance(item, dict):
+                if hasattr(item, "text"):
+                    texts.append(item.text)
+                elif isinstance(item, dict):
                     texts.append(item.get("text", ""))
                 elif isinstance(item, str):
                     texts.append(item)
             return "".join(texts)
+        if hasattr(results, "text"):
+            return results.text
         return str(results)
 
     def _extract_words(self, results, offset_sec: float) -> list[dict] | None:
@@ -224,16 +228,17 @@ class ASRPipeline:
 
         words = []
         for item in results:
-            if not isinstance(item, dict):
+            # ASRTranscription.time_stamps -> ForcedAlignResult.items -> [ForcedAlignItem]
+            ts = getattr(item, "time_stamps", None)
+            if ts is None:
                 continue
-            item_words = item.get("words", [])
-            for w in item_words:
-                if isinstance(w, dict) and "text" in w:
-                    words.append({
-                        "text": w["text"],
-                        "start": w.get("start", 0) + offset_sec,
-                        "end": w.get("end", 0) + offset_sec,
-                    })
+            align_items = getattr(ts, "items", [])
+            for w in align_items:
+                words.append({
+                    "text": w.text,
+                    "start": round(w.start_time + offset_sec, 3),
+                    "end": round(w.end_time + offset_sec, 3),
+                })
         return words if words else None
 
     def _cleanup(self, original_path: str, wav_path: str | None, chunk_dir: str):

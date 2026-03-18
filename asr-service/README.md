@@ -1,6 +1,20 @@
 # ASR Service
 
-基于 FastAPI 的语音识别服务，支持 CPU (OpenVINO) 和 GPU (Qwen3-ASR) 两种推理模式，自动检测硬件环境并选择最优引擎。
+基于 FastAPI 的语音识别服务，集成 VAD 语音检测、Qwen3-ASR 识别、标点恢复，支持 GPU / CPU 两种运行模式。
+
+## 系统要求
+
+- Python 3.10+
+- ffmpeg（必须）
+- NVIDIA GPU + CUDA 12.1+（可选，GPU 模式需要）
+
+```bash
+# 安装 ffmpeg (Ubuntu/Debian)
+apt install ffmpeg
+
+# 确认 GPU 环境（可选）
+nvidia-smi
+```
 
 ## 快速开始
 
@@ -11,19 +25,27 @@ cd asr-service
 bash setup.sh
 ```
 
-脚本会自动完成：
-- 创建 Python 虚拟环境 (`venv/`)
-- 根据是否有 NVIDIA GPU 安装对应版本的 PyTorch
-- 安装所有项目依赖
-- 创建必要的运行时目录
-
 ### 2. 启动服务
 
 ```bash
+# GPU 默认模式（自动检测显存，选择模型大小）
 bash start.sh
+
+# GPU 全功能模式（1.7B 模型 + 对齐）
+bash start.sh --model-size 1.7b --enable-align
+
+# GPU 轻量模式（0.6B 模型，关闭对齐）
+bash start.sh --model-size 0.6b --no-align
+
+# CPU 兼容模式（无显卡机器）
+bash start.sh --device cpu --model-size 0.6b
+
+# 指定模型下载源（国内推荐 modelscope，海外用 huggingface）
+bash start.sh --model-source modelscope
+bash start.sh --model-source huggingface
 ```
 
-服务默认监听 `http://127.0.0.1:8765`。
+服务默认监听 `http://0.0.0.0:8765`。
 
 ### 3. 验证服务
 
@@ -31,11 +53,42 @@ bash start.sh
 curl http://127.0.0.1:8765/health
 ```
 
-正常响应：
+响应示例：
 
 ```json
-{"status": "ok", "device": "cpu", "engine": "openvino"}
+{
+  "status": "ready",
+  "device": "cuda",
+  "model_size": "0.6b",
+  "align_enabled": true,
+  "punc_enabled": true,
+  "vad_backend": "pytorch",
+  "punc_backend": "pytorch"
+}
 ```
+
+## 启动参数
+
+| 参数 | 取值 | 默认值 | 说明 |
+|------|------|--------|------|
+| `--device` | `auto` / `cuda` / `cpu` | `auto` | 运行设备，auto 自动检测 |
+| `--model-size` | `0.6b` / `1.7b` | 根据显存自动选择 | ASR 模型大小 |
+| `--enable-align` / `--no-align` | - | `--enable-align` | 是否加载对齐模型（单词级时间戳） |
+| `--enable-punc` / `--no-punc` | - | `--enable-punc` | 是否启用标点恢复 |
+| `--model-source` | `modelscope` / `huggingface` | `modelscope` | 模型下载源 |
+
+### 三种运行模式
+
+| | GPU 全功能 | GPU 轻量 | CPU 兼容 |
+|--|-----------|---------|---------|
+| ASR | Qwen3-ASR + CUDA | Qwen3-ASR + CUDA | Qwen3-ASR + CPU |
+| 对齐 | ForcedAligner | **关闭** | **强制关闭** |
+| VAD | FSMN-VAD (PyTorch) | FSMN-VAD (PyTorch) | FSMN-VAD (**ONNX**) |
+| 标点 | CT-Transformer (PyTorch) | CT-Transformer (PyTorch) | CT-Transformer (**ONNX**) |
+| 时间戳 | 单词级 | 句子级 | 句子级 |
+| 显存需求 | ~6-8GB | ~2-3GB | 内存 ~4-6GB |
+
+> `--device auto` 时，服务根据显存自动选择：>=6GB 用 1.7B，4-6GB 用 0.6B，<4GB 强制关闭对齐，无 GPU 回退 CPU。
 
 ## API 接口
 
@@ -43,16 +96,21 @@ curl http://127.0.0.1:8765/health
 
 ```bash
 curl -X POST http://127.0.0.1:8765/asr \
-  -F "file=@/path/to/audio.wav" \
-  -F "mode=auto" \
-  -F "align=false"
+  -F "file=@/path/to/audio.wav"
+```
+
+带可选参数：
+
+```bash
+curl -X POST http://127.0.0.1:8765/asr \
+  -F "file=@/path/to/audio.mp3" \
+  -F "language=zh"
 ```
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| file | 文件 | 必填 | 音频文件 (wav/mp3 等) |
-| mode | string | auto | `auto` 自动选择 / `cpu` 强制CPU / `gpu` 强制GPU |
-| align | bool | false | 是否返回字级别时间戳 |
+| file | 文件 | 必填 | 音频文件（WAV/MP3/FLAC/M4A/AAC/OGG 等） |
+| language | string | null | 语言代码，null 为自动检测 |
 
 响应：
 
@@ -60,16 +118,12 @@ curl -X POST http://127.0.0.1:8765/asr \
 {"task_id": "550e8400-e29b-41d4-a716-446655440000"}
 ```
 
+**限制**：文件最大 1GB，音频时长 1s ~ 4小时。
+
 ### 查询任务状态
 
 ```bash
 curl http://127.0.0.1:8765/asr/{task_id}
-```
-
-响应（处理中）：
-
-```json
-{"task_id": "550e8400-...", "status": "processing", "progress": 0.45, "result": null, "error": null}
 ```
 
 响应（完成）：
@@ -77,18 +131,31 @@ curl http://127.0.0.1:8765/asr/{task_id}
 ```json
 {
   "task_id": "550e8400-...",
-  "status": "done",
+  "status": "completed",
   "progress": 1.0,
   "result": {
     "segments": [
-      {"start": 0, "end": 12.5, "text": "你好大家好"}
-    ]
+      {
+        "start": 0.0,
+        "end": 3.2,
+        "text": "甚至出现交易几乎停滞的情况。",
+        "words": [
+          {"text": "甚", "start": 0.0, "end": 0.15},
+          {"text": "至", "start": 0.15, "end": 0.30}
+        ]
+      }
+    ],
+    "full_text": "甚至出现交易几乎停滞的情况。",
+    "language": null,
+    "align_enabled": true,
+    "punc_enabled": true
   },
   "error": null
 }
 ```
 
-任务状态流转：`pending` → `processing` → `done` / `error`
+- `words` 字段仅在 `align_enabled=true` 时存在
+- 任务状态流转：`pending` → `processing` → `completed` / `failed`
 
 ### 健康检查
 
@@ -101,46 +168,52 @@ curl http://127.0.0.1:8765/health
 ```
 asr-service/
 ├── app/
-│   ├── main.py              # 服务入口
-│   ├── config.py            # 全局配置
-│   ├── runtime/             # 设备检测、引擎选择、任务队列
-│   ├── engines/             # 推理引擎 (OpenVINO / Qwen CUDA)
-│   ├── pipeline/            # 音频切片 + ASR 流水线
-│   ├── api/                 # FastAPI 路由和数据模型
-│   └── utils/               # 日志、模型下载管理
-├── models/                  # 模型存放 (自动下载，不提交Git)
-├── cache/                   # 运行时缓存
-├── logs/                    # 日志文件
-├── setup.sh                 # 环境初始化
-├── start.sh                 # 服务启动
-└── requirements.txt         # 依赖清单
+│   ├── main.py                    # 服务入口（argparse 启动参数）
+│   ├── config.py                  # 全局配置
+│   ├── api/
+│   │   ├── routes.py              # FastAPI 路由
+│   │   └── schemas.py             # 请求/响应数据模型
+│   ├── engines/
+│   │   ├── qwen_asr_engine.py     # Qwen3-ASR 识别引擎
+│   │   ├── vad_engine.py          # FSMN-VAD 语音检测引擎
+│   │   └── punc_engine.py         # CT-Transformer 标点引擎
+│   ├── pipeline/
+│   │   ├── asr_pipeline.py        # ASR 流水线编排
+│   │   └── audio_preprocessor.py  # ffmpeg 格式转换
+│   ├── runtime/
+│   │   ├── device.py              # 设备检测与选择
+│   │   └── task_manager.py        # 任务队列管理
+│   └── utils/
+│       ├── logger.py              # 日志配置
+│       └── model_manager.py       # 模型下载管理
+├── models/                        # 模型存放（自动下载，不提交 Git）
+├── cache/                         # 运行时缓存（上传文件、音频切片）
+├── logs/                          # 日志文件
+├── setup.sh                       # 环境初始化
+├── start.sh                       # 服务启动
+└── requirements.txt               # 依赖清单
 ```
 
-## 硬件适配
+## 处理流程
 
-| 环境 | 自动选择引擎 | 模型 |
-|------|-------------|------|
-| 无 GPU | OpenVINO | IR 格式 (CPU优化) |
-| GPU VRAM 4-6GB | Qwen CUDA | Qwen3-ASR-0.6B |
-| GPU VRAM >= 6GB | Qwen CUDA | Qwen3-ASR-1.7B |
-
-## GPU 支持（可选）
-
-如需 GPU 加速，确保已安装 NVIDIA 驱动和 CUDA 12.1+：
-
-```bash
-nvidia-smi        # 确认驱动
-nvcc --version    # 确认 CUDA
+```
+音频文件 → ffmpeg转换(16kHz WAV) → VAD切片 → ASR识别 → [标点恢复] → 输出结果
+                                   (FSMN-VAD)  (Qwen3-ASR)  (CT-Transformer)
+                                                  ↓
+                                           [可选] 对齐(ForcedAligner)
 ```
 
 ## 配置项
 
-主要配置在 `app/config.py`，可按需修改：
+主要配置在 `app/config.py`：
 
 | 配置 | 默认值 | 说明 |
 |------|--------|------|
-| HOST | 127.0.0.1 | 监听地址 |
+| HOST | 0.0.0.0 | 监听地址 |
 | PORT | 8765 | 监听端口 |
-| DEFAULT_CHUNK_SIZE | 30s | CPU 模式音频切片时长 |
-| GPU_CHUNK_SIZE | 60s | GPU 模式音频切片时长 |
+| MAX_SEGMENT_DURATION | 30s | VAD 超长片段二次切分阈值 |
+| MAX_AUDIO_DURATION | 14400s | 最大音频时长（4 小时） |
+| MAX_AUDIO_FILE_SIZE | 1024MB | 最大文件大小 |
+| MIN_AUDIO_DURATION | 1.0s | 最短音频时长 |
 | MAX_QUEUE_SIZE | 100 | 最大任务队列长度 |
+| TASK_TIMEOUT | 1800s | 单任务超时（30 分钟） |
