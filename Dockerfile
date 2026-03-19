@@ -1,0 +1,41 @@
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# 替换 APT 源为华科镜像（加速国内构建）
+RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.hust.edu.cn/ubuntu|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.hust.edu.cn/ubuntu|g' /etc/apt/sources.list
+
+# 安装系统依赖：Python 3.12、ffmpeg
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
+        python3.12 \
+        python3.12-venv \
+        python3.12-dev \
+        ffmpeg \
+        curl \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12 \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# 安装项目依赖（requirements.txt 变更时重建此层）
+COPY asr-service/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --ignore-installed -r requirements.txt \
+        --extra-index-url https://download.pytorch.org/whl/cu121
+
+# 复制应用代码
+COPY asr-service/app /app/app
+
+# 创建模型挂载目录
+RUN mkdir -p /app/models /app/logs
+
+EXPOSE 8765
+
+ENTRYPOINT ["python", "-m", "app.main", "--host", "0.0.0.0"]
