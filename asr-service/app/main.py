@@ -199,7 +199,20 @@ def create_app(args=None) -> FastAPI:
     return app
 
 
-app = create_app()
+app = None
+
+
+def get_app():
+    global app
+    if app is None:
+        app = create_app()
+    return app
+
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host=cfg.HOST, port=cfg.PORT, reload=False)
+    args = parse_args()
+    if args.host is not None:
+        cfg.HOST = args.host
+    if args.port is not None:
+        cfg.PORT = args.port
+    uvicorn.run("app.main:get_app", host=cfg.HOST, port=cfg.PORT, reload=False, factory=True)

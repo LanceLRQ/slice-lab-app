@@ -1,5 +1,18 @@
 import logging
+import sys
+
+# Python 3.12+ distutils compatibility for funasr
+if sys.version_info >= (3, 12):
+    from packaging.version import Version
+    import types
+    distutils = types.ModuleType("distutils")
+    distutils.version = types.ModuleType("distutils.version")
+    distutils.version.LooseVersion = Version
+    sys.modules["distutils"] = distutils
+    sys.modules["distutils.version"] = distutils.version
+
 from funasr import AutoModel
+from funasr.models.ct_transformer.model import CTTransformer  # noqa: F401, trigger registration
 from app.utils.model_manager import ensure_model_modelscope
 from app.config import MODEL_LOCAL_MAP, MODELSCOPE_ONLY_REPO_MAP
 
