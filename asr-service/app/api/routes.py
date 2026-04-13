@@ -1,5 +1,6 @@
 import os
 import uuid
+import hmac
 import logging
 import queue
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
@@ -19,7 +20,7 @@ async def verify_api_key(
     """配置了 API_KEY 时，要求请求携带有效的 Bearer token"""
     if not cfg.API_KEY:
         return
-    if credentials is None or credentials.credentials != cfg.API_KEY:
+    if credentials is None or not hmac.compare_digest(credentials.credentials, cfg.API_KEY):
         raise HTTPException(
             status_code=401,
             detail="Invalid or missing API key",
