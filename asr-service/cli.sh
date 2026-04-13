@@ -556,6 +556,7 @@ default_config() {
     LAUNCH_MAX_SEGMENT="5"
     LAUNCH_HOST="127.0.0.1"
     LAUNCH_PORT="8765"
+    LAUNCH_API_KEY=""
     LAUNCH_METHOD=""
 }
 
@@ -581,6 +582,7 @@ LAUNCH_WEB="$LAUNCH_WEB"
 LAUNCH_MAX_SEGMENT="$LAUNCH_MAX_SEGMENT"
 LAUNCH_HOST="$LAUNCH_HOST"
 LAUNCH_PORT="$LAUNCH_PORT"
+LAUNCH_API_KEY="$LAUNCH_API_KEY"
 LAUNCH_METHOD="$LAUNCH_METHOD"
 EOF
     success_msg "配置已保存到 .cli_launch_config"
@@ -598,6 +600,7 @@ print_config_summary() {
     printf "  最大切片时长: %s 秒\n" "$LAUNCH_MAX_SEGMENT"
     printf "  监听地址:     %s\n" "$LAUNCH_HOST"
     printf "  监听端口:     %s\n" "$LAUNCH_PORT"
+    printf "  API 密钥:     %s\n" "$([ -n "$LAUNCH_API_KEY" ] && echo "已设置" || echo "未设置（无需认证）")"
     if [ -n "$LAUNCH_METHOD" ]; then
         printf "  启动方式:     %s\n" "$LAUNCH_METHOD"
     fi
@@ -686,6 +689,11 @@ configure_launch() {
     read_input "监听端口" "$LAUNCH_PORT"
     LAUNCH_PORT="$INPUT_RESULT"
     echo
+
+    # API 密钥
+    read_input "API 密钥（留空则不启用认证）" "$LAUNCH_API_KEY"
+    LAUNCH_API_KEY="$INPUT_RESULT"
+    echo
 }
 
 build_launch_args() {
@@ -714,6 +722,10 @@ build_launch_args() {
     args+=" --max-segment $LAUNCH_MAX_SEGMENT"
     args+=" --host $LAUNCH_HOST"
     args+=" --port $LAUNCH_PORT"
+
+    if [ -n "$LAUNCH_API_KEY" ]; then
+        args+=" --api-key $LAUNCH_API_KEY"
+    fi
 
     echo "$args"
 }
@@ -797,6 +809,9 @@ launch_via_docker() {
     run_args+=("-p" "${LAUNCH_PORT}:${LAUNCH_PORT}")
     run_args+=("-v" "${SCRIPT_DIR}/models:/app/models")
     run_args+=("-v" "${SCRIPT_DIR}/logs:/app/logs")
+    if [ -n "$LAUNCH_API_KEY" ]; then
+        run_args+=("-e" "ASR_API_KEY=${LAUNCH_API_KEY}")
+    fi
     run_args+=("--name" "${CONTAINER_NAME}")
     run_args+=("${IMAGE_NAME}:${IMAGE_TAG}")
     # shellcheck disable=SC2086

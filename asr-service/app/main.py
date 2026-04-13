@@ -60,6 +60,10 @@ def parse_args():
         "--max-segment", type=int, default=5,
         help="VAD 切片合并最大时长，单位秒 (default: 5)",
     )
+    parser.add_argument(
+        "--api-key", default=None,
+        help="API 密钥，设置后启用 Bearer token 认证（覆盖 ASR_API_KEY 环境变量）",
+    )
     return parser.parse_args()
 
 
@@ -83,6 +87,10 @@ def create_app(args=None) -> FastAPI:
         cfg.HOST = args.host
     if args.port is not None:
         cfg.PORT = args.port
+    if args.api_key is not None:
+        cfg.API_KEY = args.api_key
+    if cfg.API_KEY:
+        logger.info("API 密钥已配置，Bearer token 认证已启用")
 
     # 4. 检测设备并确定运行参数
     device_info = detect_device()

@@ -346,6 +346,7 @@ set "LAUNCH_WEB=yes"
 set "LAUNCH_MAX_SEGMENT=5"
 set "LAUNCH_HOST=127.0.0.1"
 set "LAUNCH_PORT=8765"
+set "LAUNCH_API_KEY="
 set "LAUNCH_METHOD="
 
 :: 尝试加载配置
@@ -464,6 +465,10 @@ if not "!C!"=="" set "LAUNCH_HOST=!C!"
 :: 监听端口
 set /p "C=监听端口 [%LAUNCH_PORT%]: "
 if not "!C!"=="" set "LAUNCH_PORT=!C!"
+
+:: API 密钥
+set /p "C=API 密钥（留空则不启用认证）[!LAUNCH_API_KEY!]: "
+if not "!C!"=="" set "LAUNCH_API_KEY=!C!"
 echo.
 
 goto :start_choose_method
@@ -521,6 +526,7 @@ if "!LAUNCH_METHOD!"=="" set "LAUNCH_METHOD=portable"
     echo LAUNCH_MAX_SEGMENT=!LAUNCH_MAX_SEGMENT!
     echo LAUNCH_HOST=!LAUNCH_HOST!
     echo LAUNCH_PORT=!LAUNCH_PORT!
+    echo LAUNCH_API_KEY=!LAUNCH_API_KEY!
     echo LAUNCH_METHOD=!LAUNCH_METHOD!
 ) > "!CONFIG_FILE!"
 call :success_msg "配置已保存到 .cli_launch_config"
@@ -541,6 +547,7 @@ if "!LAUNCH_WEB!"=="yes" set "ARGS=!ARGS! --web"
 set "ARGS=!ARGS! --max-segment !LAUNCH_MAX_SEGMENT!"
 set "ARGS=!ARGS! --host !LAUNCH_HOST!"
 set "ARGS=!ARGS! --port !LAUNCH_PORT!"
+if not "!LAUNCH_API_KEY!"=="" set "ARGS=!ARGS! --api-key !LAUNCH_API_KEY!"
 
 :: 启动
 if "!LAUNCH_METHOD!"=="portable" goto :launch_portable
@@ -601,6 +608,7 @@ if "!LAUNCH_WEB!"=="yes" (echo   Web UI:       启用) else (echo   Web UI:     
 echo   最大切片时长: !LAUNCH_MAX_SEGMENT! 秒
 echo   监听地址:     !LAUNCH_HOST!
 echo   监听端口:     !LAUNCH_PORT!
+if not "!LAUNCH_API_KEY!"=="" (echo   API 密钥:     已设置) else (echo   API 密钥:     未设置（无需认证）)
 if not "!LAUNCH_METHOD!"=="" echo   启动方式:     !LAUNCH_METHOD!
 echo -----------------------------------------
 goto :eof
