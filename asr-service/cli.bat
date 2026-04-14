@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
@@ -455,18 +455,22 @@ if "!C!"=="2" set "LAUNCH_WEB=no"
 echo.
 
 :: 最大切片时长
+set "C="
 set /p "C=VAD 切片合并最大时长（秒）[%LAUNCH_MAX_SEGMENT%]: "
 if not "!C!"=="" set "LAUNCH_MAX_SEGMENT=!C!"
 
 :: 监听地址
+set "C="
 set /p "C=监听地址 [%LAUNCH_HOST%]: "
 if not "!C!"=="" set "LAUNCH_HOST=!C!"
 
 :: 监听端口
+set "C="
 set /p "C=监听端口 [%LAUNCH_PORT%]: "
 if not "!C!"=="" set "LAUNCH_PORT=!C!"
 
 :: API 密钥
+set "C="
 set /p "C=API 密钥（留空则不启用认证）[!LAUNCH_API_KEY!]: "
 if not "!C!"=="" set "LAUNCH_API_KEY=!C!"
 echo.
