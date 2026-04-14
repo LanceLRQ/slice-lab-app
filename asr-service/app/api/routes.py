@@ -5,7 +5,7 @@ import logging
 import queue
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.api.schemas import ASRResponse, TaskStatusResponse, HealthResponse
+from app.api.schemas import ASRResponse, TaskStatusResponse, TaskListResponse, CancelResponse, HealthResponse
 from app.config import UPLOADS_DIR, MAX_AUDIO_FILE_SIZE
 import app.config as cfg
 
@@ -103,9 +103,19 @@ async def submit_asr(
     return ASRResponse(task_id=task_id)
 
 
-@router.get("/asr/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)])
-async def get_task_status(task_id: str):
-    """查询任务状态"""
+@router.get("/tasks", response_model=TaskListResponse, dependencies=[Depends(verify_api_key)])
+async def list_tasks(status: str | None = None):
+    """获取任务列表，可通过 status 参数筛选（pending/processing/completed/failed/cancelled）"""
+    if _task_manager is None:
+        raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
+
+    tasks = _task_manager.list_tasks(status=status)
+    return TaskListResponse(total=len(tasks), tasks=tasks)
+
+
+@router.get("/tasks/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)])
+async def get_task_detail(task_id: str):
+    """查询单个任务详情（含识别结果）"""
     if _task_manager is None:
         raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
 
@@ -123,6 +133,48 @@ async def get_task_status(task_id: str):
         progress=task["progress"],
         result=task.get("result"),
         error=task.get("error"),
+    )
+
+
+@router.get("/asr/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)], deprecated=True)
+async def get_task_status(task_id: str):
+    """查询任务状态（已过时，请使用 GET /v1/tasks/{task_id}）"""
+    return await get_task_detail(task_id)
+
+
+@router.delete("/tasks/{task_id}", response_model=CancelResponse, dependencies=[Depends(verify_api_key)])
+async def cancel_asr(task_id: str):
+    """取消 ASR 任务"""
+    if _task_manager is None:
+        raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
+
+    previous_status = _task_manager.cancel_task(task_id)
+
+    if previous_status is None:
+        return CancelResponse(
+            task_id=task_id,
+            status="not_found",
+            message="任务不存在",
+        )
+
+    if previous_status == "pending":
+        return CancelResponse(
+            task_id=task_id,
+            status="cancelled",
+            message="任务已取消",
+        )
+
+    if previous_status == "processing":
+        return CancelResponse(
+            task_id=task_id,
+            status="cancelled",
+            message="已发送取消请求，任务将在当前 chunk 处理完成后停止",
+        )
+
+    return CancelResponse(
+        task_id=task_id,
+        status=f"already_{previous_status}",
+        message=f"任务已处于 {previous_status} 状态，无法取消",
     )
 
 
