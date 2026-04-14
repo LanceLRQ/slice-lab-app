@@ -308,7 +308,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     cancelBtn.disabled = true;
     cancelBtn.textContent = '取消中...';
     try {
-      await fetch('/v1/asr/' + currentTaskId, { method: 'DELETE', headers: authHeaders() });
+      await fetch('/v1/tasks/' + currentTaskId, { method: 'DELETE', headers: authHeaders() });
     } catch (e) {}
   });
 
@@ -540,11 +540,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
         const pct = Math.round((t.progress || 0) * 100);
         const shortId = t.task_id.substring(0, 8) + '...';
         const time = t.created_at ? t.created_at.replace('T', ' ').substring(0, 19) : '--';
+        const safeId = escapeHtml(t.task_id);
+        const safeStatus = escapeHtml(t.status);
         tr.innerHTML =
-          '<td title="' + t.task_id + '">' + shortId + '</td>' +
-          '<td><span class="status-badge status-' + t.status + '">' + (statusLabels[t.status] || t.status) + '</span></td>' +
+          '<td title="' + safeId + '">' + escapeHtml(shortId) + '</td>' +
+          '<td><span class="status-badge status-' + safeStatus + '">' + escapeHtml(statusLabels[t.status] || t.status) + '</span></td>' +
           '<td>' + pct + '%</td>' +
-          '<td>' + time + '</td>';
+          '<td>' + escapeHtml(time) + '</td>';
         tr.addEventListener('click', () => {
           window.open('/v1/tasks/' + t.task_id, '_blank');
         });

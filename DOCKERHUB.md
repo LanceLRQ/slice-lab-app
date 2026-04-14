@@ -199,7 +199,7 @@ curl http://localhost:8765/v1/tasks?status=processing
 #### 取消任务
 
 ```bash
-curl -X DELETE http://localhost:8765/v1/asr/{task_id}
+curl -X DELETE http://localhost:8765/v1/tasks/{task_id}
 ```
 
 #### 健康检查
@@ -426,7 +426,7 @@ Response:
 #### Cancel Task
 
 ```bash
-curl -X DELETE http://localhost:8765/v1/asr/{task_id}
+curl -X DELETE http://localhost:8765/v1/tasks/{task_id}
 ```
 
 #### Health Check

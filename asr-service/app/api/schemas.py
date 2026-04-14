@@ -19,7 +19,7 @@ class TaskListItem(BaseModel):
     progress: float
     language: str | None = None
     created_at: str
-    finished_at: float | None = None
+    finished_at: str | None = None
     error: str | None = None
 
 

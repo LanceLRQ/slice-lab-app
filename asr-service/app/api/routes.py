@@ -139,27 +139,10 @@ async def get_task_detail(task_id: str):
 @router.get("/asr/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)], deprecated=True)
 async def get_task_status(task_id: str):
     """查询任务状态（已过时，请使用 GET /v1/tasks/{task_id}）"""
-    if _task_manager is None:
-        raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
-
-    task = _task_manager.get_task(task_id)
-    if not task:
-        return TaskStatusResponse(
-            task_id=task_id,
-            status="not_found",
-            progress=0.0,
-        )
-
-    return TaskStatusResponse(
-        task_id=task["task_id"],
-        status=task["status"],
-        progress=task["progress"],
-        result=task.get("result"),
-        error=task.get("error"),
-    )
+    return await get_task_detail(task_id)
 
 
-@router.delete("/asr/{task_id}", response_model=CancelResponse, dependencies=[Depends(verify_api_key)])
+@router.delete("/tasks/{task_id}", response_model=CancelResponse, dependencies=[Depends(verify_api_key)])
 async def cancel_asr(task_id: str):
     """取消 ASR 任务"""
     if _task_manager is None:

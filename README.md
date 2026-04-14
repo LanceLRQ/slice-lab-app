@@ -385,7 +385,7 @@ curl http://127.0.0.1:8765/v1/tasks?status=processing
 ### 取消任务
 
 ```bash
-curl -X DELETE http://127.0.0.1:8765/v1/asr/{task_id}
+curl -X DELETE http://127.0.0.1:8765/v1/tasks/{task_id}
 ```
 
 响应：

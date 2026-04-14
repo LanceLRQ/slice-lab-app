@@ -114,7 +114,7 @@ class TaskManager:
                 # 尚未开始处理，立即标记为取消
                 task["status"] = "cancelled"
                 task["error"] = "任务已取消"
-                task["finished_at"] = time.time()
+                task["finished_at"] = datetime.now().isoformat()
                 logger.info(f"任务已取消 (pending): {task_id}")
             else:
                 # processing 中，pipeline 将在下一个 chunk 边界检测到取消
@@ -123,7 +123,7 @@ class TaskManager:
         return status
 
     def is_cancelled(self, task_id: str) -> bool:
-        """检查指定任务是否已被请求取消（线程安全，无需加锁）"""
+        """检查指定任务是否已被请求取消（依赖 CPython GIL 保证 dict 读取安全）"""
         event = self._cancel_events.get(task_id)
         return event.is_set() if event else False
 
@@ -157,13 +157,13 @@ class TaskManager:
                         task["status"] = "cancelled"
                         task["result"] = result
                         task["error"] = "任务已取消，返回部分结果"
-                        task["finished_at"] = time.time()
+                        task["finished_at"] = datetime.now().isoformat()
                         logger.info(f"任务已取消 (processing, partial): {task_id}")
                     else:
                         task["status"] = "completed"
                         task["progress"] = 1.0
                         task["result"] = result
-                        task["finished_at"] = time.time()
+                        task["finished_at"] = datetime.now().isoformat()
                         logger.info(f"任务完成: {task_id} ({elapsed:.1f}s)")
             except FuturesTimeoutError:
                 elapsed = time.time() - start_time
@@ -171,7 +171,7 @@ class TaskManager:
                 with self._lock:
                     task["status"] = "failed"
                     task["error"] = f"处理超时（>{TASK_TIMEOUT}s）"
-                    task["finished_at"] = time.time()
+                    task["finished_at"] = datetime.now().isoformat()
                 logger.error(f"任务超时: {task_id} ({elapsed:.0f}s)")
             except Exception as e:
                 if self._stop_event.is_set():
@@ -179,7 +179,7 @@ class TaskManager:
                 with self._lock:
                     task["status"] = "failed"
                     task["error"] = "内部处理错误，请检查服务日志"
-                    task["finished_at"] = time.time()
+                    task["finished_at"] = datetime.now().isoformat()
                 logger.error(f"任务失败: {task_id}, 错误: {e}", exc_info=True)
             finally:
                 self._queue.task_done()
@@ -210,7 +210,8 @@ class TaskManager:
         with self._lock:
             for task_id, task in self._tasks.items():
                 if task["status"] in ("completed", "failed", "cancelled") and task.get("finished_at"):
-                    if now - task["finished_at"] > TASK_RESULT_TTL:
+                    finished_ts = datetime.fromisoformat(task["finished_at"]).timestamp()
+                    if now - finished_ts > TASK_RESULT_TTL:
                         expired.append(task_id)
             for task_id in expired:
                 del self._tasks[task_id]

@@ -385,7 +385,7 @@ Tasks are sorted by creation time in descending order. Results are not included.
 ### Cancel Task
 
 ```bash
-curl -X DELETE http://127.0.0.1:8765/v1/asr/{task_id}
+curl -X DELETE http://127.0.0.1:8765/v1/tasks/{task_id}
 ```
 
 Response:
