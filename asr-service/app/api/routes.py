@@ -103,7 +103,7 @@ async def submit_asr(
     return ASRResponse(task_id=task_id)
 
 
-@router.get("/asr", response_model=TaskListResponse, dependencies=[Depends(verify_api_key)])
+@router.get("/tasks", response_model=TaskListResponse, dependencies=[Depends(verify_api_key)])
 async def list_tasks(status: str | None = None):
     """获取任务列表，可通过 status 参数筛选（pending/processing/completed/failed/cancelled）"""
     if _task_manager is None:
@@ -113,9 +113,32 @@ async def list_tasks(status: str | None = None):
     return TaskListResponse(total=len(tasks), tasks=tasks)
 
 
-@router.get("/asr/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)])
+@router.get("/tasks/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)])
+async def get_task_detail(task_id: str):
+    """查询单个任务详情（含识别结果）"""
+    if _task_manager is None:
+        raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
+
+    task = _task_manager.get_task(task_id)
+    if not task:
+        return TaskStatusResponse(
+            task_id=task_id,
+            status="not_found",
+            progress=0.0,
+        )
+
+    return TaskStatusResponse(
+        task_id=task["task_id"],
+        status=task["status"],
+        progress=task["progress"],
+        result=task.get("result"),
+        error=task.get("error"),
+    )
+
+
+@router.get("/asr/{task_id}", response_model=TaskStatusResponse, dependencies=[Depends(verify_api_key)], deprecated=True)
 async def get_task_status(task_id: str):
-    """查询任务状态"""
+    """查询任务状态（已过时，请使用 GET /v1/tasks/{task_id}）"""
     if _task_manager is None:
         raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
 
