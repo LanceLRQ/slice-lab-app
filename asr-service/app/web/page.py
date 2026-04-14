@@ -138,7 +138,10 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
   <!-- 进度条 -->
   <div class="progress-wrap" id="progressWrap">
     <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="progress-text" id="progressText">准备中...</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <div class="progress-text" id="progressText" style="margin-top:0;">准备中...</div>
+      <button id="cancelBtn" style="display:none;background:#ef4444;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:0.85em;">取消识别</button>
+    </div>
   </div>
 
   <!-- 错误提示 -->
@@ -179,7 +182,7 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
   const $ = id => document.getElementById(id);
   const uploadZone = $('uploadZone'), fileInput = $('fileInput');
   const fileInfo = $('fileInfo'), fileName = $('fileName'), audioPlayer = $('audioPlayer');
-  const submitBtn = $('submitBtn'), progressWrap = $('progressWrap');
+  const submitBtn = $('submitBtn'), progressWrap = $('progressWrap'), cancelBtn = $('cancelBtn');
   const progressBar = $('progressBar'), progressText = $('progressText');
   const errorBox = $('errorBox'), resultArea = $('resultArea');
   const metaTags = $('metaTags'), segments = $('segments'), fullText = $('fullText');
@@ -190,6 +193,18 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
   let audioObjectURL = null;
   let pollTimer = null;
   let resultData = null;
+  let currentTaskId = null;
+
+  cancelBtn.addEventListener('click', async () => {
+    if (!currentTaskId) return;
+    cancelBtn.disabled = true;
+    cancelBtn.textContent = '取消中...';
+    try {
+      await fetch('/v1/asr/' + currentTaskId, { method: 'DELETE', headers: authHeaders() });
+    } catch (e) {
+      // 忽略网络错误，轮询会检测到取消状态
+    }
+  });
 
   function authHeaders() {
     const key = apiKeyInput.value.trim();
@@ -239,6 +254,9 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
     progressWrap.style.display = 'block';
     progressBar.style.width = '0%';
     progressText.textContent = '上传中...';
+    cancelBtn.style.display = 'inline-block';
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = '取消识别';
 
     const form = new FormData();
     form.append('file', selectedFile);
@@ -257,6 +275,7 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
   });
 
   function startPolling(taskId) {
+    currentTaskId = taskId;
     progressText.textContent = '识别中...';
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(async () => {
@@ -275,6 +294,17 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
         } else if (data.status === 'failed') {
           clearInterval(pollTimer); pollTimer = null;
           showError(data.error || '识别失败');
+        } else if (data.status === 'cancelled') {
+          clearInterval(pollTimer); pollTimer = null;
+          const pct = Math.round((data.progress || 0) * 100);
+          progressBar.style.width = pct + '%';
+          progressText.textContent = '任务已取消';
+          cancelBtn.style.display = 'none';
+          if (data.result && data.result.segments && data.result.segments.length > 0) {
+            showResult(data);
+          } else {
+            showError(data.error || '任务已取消');
+          }
         } else if (data.status === 'not_found') {
           clearInterval(pollTimer); pollTimer = null;
           showError('任务不存在');
@@ -291,6 +321,8 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
     errorBox.textContent = msg;
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
+    cancelBtn.style.display = 'none';
+    currentTaskId = null;
   }
 
   function showResult(data) {
@@ -334,6 +366,8 @@ h1 { text-align: center; margin-bottom: 24px; color: #1a1a2e; font-size: 1.6em; 
 
     resultArea.style.display = 'block';
     submitBtn.disabled = false;
+    cancelBtn.style.display = 'none';
+    currentTaskId = null;
   }
 
   function escapeHtml(s) {

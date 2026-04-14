@@ -5,7 +5,7 @@ import logging
 import queue
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.api.schemas import ASRResponse, TaskStatusResponse, HealthResponse
+from app.api.schemas import ASRResponse, TaskStatusResponse, CancelResponse, HealthResponse
 from app.config import UPLOADS_DIR, MAX_AUDIO_FILE_SIZE
 import app.config as cfg
 
@@ -123,6 +123,42 @@ async def get_task_status(task_id: str):
         progress=task["progress"],
         result=task.get("result"),
         error=task.get("error"),
+    )
+
+
+@router.delete("/asr/{task_id}", response_model=CancelResponse, dependencies=[Depends(verify_api_key)])
+async def cancel_asr(task_id: str):
+    """取消 ASR 任务"""
+    if _task_manager is None:
+        raise HTTPException(status_code=503, detail="服务尚未就绪，请稍后重试")
+
+    previous_status = _task_manager.cancel_task(task_id)
+
+    if previous_status is None:
+        return CancelResponse(
+            task_id=task_id,
+            status="not_found",
+            message="任务不存在",
+        )
+
+    if previous_status == "pending":
+        return CancelResponse(
+            task_id=task_id,
+            status="cancelled",
+            message="任务已取消",
+        )
+
+    if previous_status == "processing":
+        return CancelResponse(
+            task_id=task_id,
+            status="cancelled",
+            message="已发送取消请求，任务将在当前 chunk 处理完成后停止",
+        )
+
+    return CancelResponse(
+        task_id=task_id,
+        status=f"already_{previous_status}",
+        message=f"任务已处于 {previous_status} 状态，无法取消",
     )
 
 

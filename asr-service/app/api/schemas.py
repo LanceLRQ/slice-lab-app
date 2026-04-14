@@ -7,10 +7,16 @@ class ASRResponse(BaseModel):
 
 class TaskStatusResponse(BaseModel):
     task_id: str
-    status: str             # "pending" | "processing" | "completed" | "failed" | "not_found"
+    status: str             # "pending" | "processing" | "completed" | "failed" | "cancelled" | "not_found"
     progress: float
     result: dict | None = None
     error: str | None = None
+
+
+class CancelResponse(BaseModel):
+    task_id: str
+    status: str     # "cancelled" | "already_completed" | "already_failed" | "already_cancelled" | "not_found"
+    message: str
 
 
 class HealthResponse(BaseModel):
