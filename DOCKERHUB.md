@@ -7,21 +7,21 @@
 ### Supported tags and respective Dockerfile links
 
 **GPU 版本**（CUDA 12.1，需要 NVIDIA GPU 和 nvidia-docker）
-- [`latest`, `1.1.0`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile)
+- [`latest`, `1.2.0`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile)
 
 **CPU 版本**（x86_64，无需 GPU，适用于普通 Linux/Windows 服务器）
-- [`latest-cpu`, `1.1.0-cpu`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
+- [`latest-cpu`, `1.2.0-cpu`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
 
 **ARM64 版本**（arm64/aarch64，无需 GPU，适用于 Apple Silicon、ARM64 Linux 服务器）
-- [`latest-arm64`, `1.1.0-arm64`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
+- [`latest-arm64`, `1.2.0-arm64`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
 
 ### 镜像版本对比
 
 | Tag | 基础镜像 | 架构 | 推理引擎 | NVIDIA GPU | 镜像体积 |
 |-----|---------|------|---------|-----------|---------|
-| `latest` / `1.1.0` | `nvidia/cuda:12.1.1-runtime-ubuntu22.04` | amd64 | PyTorch (CUDA) | 需要 | ~8-10GB |
-| `latest-cpu` / `1.1.0-cpu` | `ubuntu:22.04` | amd64 | OpenVINO (INT8) | 不需要 | ~3-4GB |
-| `latest-arm64` / `1.1.0-arm64` | `ubuntu:22.04` | arm64 | OpenVINO (FP32) | 不需要 | ~3-4GB |
+| `latest` / `1.2.0` | `nvidia/cuda:12.1.1-runtime-ubuntu22.04` | amd64 | PyTorch (CUDA) | 需要 | ~8-10GB |
+| `latest-cpu` / `1.2.0-cpu` | `ubuntu:22.04` | amd64 | OpenVINO (INT8) | 不需要 | ~3-4GB |
+| `latest-arm64` / `1.2.0-arm64` | `ubuntu:22.04` | arm64 | OpenVINO (FP32) | 不需要 | ~3-4GB |
 
 ### 特性
 
@@ -234,21 +234,21 @@ A ready-to-use long-form speech recognition API service based on Qwen3-ASR, supp
 ### Supported tags and respective Dockerfile links
 
 **GPU** (CUDA 12.1, requires NVIDIA GPU and nvidia-docker)
-- [`latest`, `1.1.0`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile)
+- [`latest`, `1.2.0`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile)
 
 **CPU** (x86_64, no GPU required, for standard Linux/Windows servers)
-- [`latest-cpu`, `1.1.0-cpu`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
+- [`latest-cpu`, `1.2.0-cpu`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
 
 **ARM64** (arm64/aarch64, no GPU required, for Apple Silicon and ARM64 Linux servers)
-- [`latest-arm64`, `1.1.0-arm64`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
+- [`latest-arm64`, `1.2.0-arm64`](https://github.com/LanceLRQ/qwen3-asr-service/blob/main/Dockerfile.cpu)
 
 ### Image tag comparison
 
 | Tag | Base Image | Arch | Inference Engine | NVIDIA GPU | Image Size |
 |-----|-----------|------|-----------------|-----------|-----------|
-| `latest` / `1.1.0` | `nvidia/cuda:12.1.1-runtime-ubuntu22.04` | amd64 | PyTorch (CUDA) | Required | ~8-10GB |
-| `latest-cpu` / `1.1.0-cpu` | `ubuntu:22.04` | amd64 | OpenVINO (INT8) | Not required | ~3-4GB |
-| `latest-arm64` / `1.1.0-arm64` | `ubuntu:22.04` | arm64 | OpenVINO (FP32) | Not required | ~3-4GB |
+| `latest` / `1.2.0` | `nvidia/cuda:12.1.1-runtime-ubuntu22.04` | amd64 | PyTorch (CUDA) | Required | ~8-10GB |
+| `latest-cpu` / `1.2.0-cpu` | `ubuntu:22.04` | amd64 | OpenVINO (INT8) | Not required | ~3-4GB |
+| `latest-arm64` / `1.2.0-arm64` | `ubuntu:22.04` | arm64 | OpenVINO (FP32) | Not required | ~3-4GB |
 
 ### Features
 
