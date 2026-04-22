@@ -4,14 +4,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# 检查 venv
+# Check venv
 if [ ! -d "venv" ]; then
-    echo "[WARN] 虚拟环境未创建，正在初始化..."
+    echo "[WARN] Virtual environment not found, initializing..."
     bash setup.sh
 fi
 
-# 将所有参数传递给 Python 服务
-# 示例:
+# Pass all arguments to the Python service
+# Examples:
 #   bash start.sh --model-size 1.7b --enable-align
 #   bash start.sh --device cpu --model-size 0.6b
 #   bash start.sh --model-source huggingface

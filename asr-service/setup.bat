@@ -15,7 +15,7 @@ set PYTHON_BIN=
 :: Check portable Python (bin\python + lib)
 if exist "bin\python\python.exe" (
     if exist "lib\site-packages" (
-        echo [INFO] 检测到便携版 Python 环境，使用便携版
+        echo [INFO] Portable Python environment detected, using portable mode
         set PYTHON_MODE=portable
         set PYTHON_BIN=bin\python\python.exe
         set PIP_TARGET=--target=lib\site-packages
@@ -25,41 +25,41 @@ if exist "bin\python\python.exe" (
 
 :: No portable environment, ask user
 echo.
-echo [INFO] 未检测到便携版 Python 环境（bin + lib 目录）
+echo [INFO] Portable Python environment not detected (bin + lib directories missing)
 echo.
-echo 请选择 Python 环境安装方式：
-echo   1) 下载便携包（推荐，开箱即用）
-echo   2) 使用系统 Python + venv 安装
+echo Select Python environment setup method:
+echo   1) Download portable package (recommended, ready to use)
+echo   2) Use system Python + venv
 echo.
-set /p ENV_CHOICE="请输入选项 [1/2]（默认 1）: "
+set /p ENV_CHOICE="Enter choice [1/2] (default 1): "
 if "%ENV_CHOICE%"=="" set ENV_CHOICE=1
 
 if "%ENV_CHOICE%"=="2" goto :setup_venv
 
 :: --- Option 1: Portable package ---
 echo.
-echo [INFO] 请前往以下地址下载便携包：
+echo [INFO] Please download the portable package from:
 echo.
-echo   百度网盘: https://pan.baidu.com/s/1ahqW1mxIoNJTG2k6b4PkkA?pwd=6cth
-echo   提取码: 6cth
+echo   Baidu Pan: https://pan.baidu.com/s/1ahqW1mxIoNJTG2k6b4PkkA?pwd=6cth
+echo   Access code: 6cth
 echo.
-echo   下载文件: qwen3-asr-service-python3.12-pytorch2.6-cu124-bin.7z
+echo   Download file: qwen3-asr-service-python3.12-pytorch2.6-cu124-bin.7z
 echo.
-echo [INFO] 解压后将 bin 和 lib 目录放置到 asr-service 目录下：
+echo [INFO] After extracting, place the bin and lib directories into the asr-service directory:
 echo.
 echo   asr-service\
-echo   ├── bin\
-echo   │   ├── python\
-echo   │   │   └── python.exe
-echo   │   └── ...
-echo   ├── lib\
-echo   │   └── site-packages\
-echo   │       └── ...
-echo   ├── setup.bat
-echo   ├── start.bat
-echo   └── ...
+echo   +-- bin\
+echo   ^|   +-- python\
+echo   ^|   ^|   +-- python.exe
+echo   ^|   +-- ...
+echo   +-- lib\
+echo   ^|   +-- site-packages\
+echo   ^|       +-- ...
+echo   +-- setup.bat
+echo   +-- start.bat
+echo   +-- ...
 echo.
-echo [INFO] 放置完成后直接运行 start.bat 启动服务
+echo [INFO] Once done, run start.bat to launch the service
 echo.
 pause
 exit /b 0
@@ -80,42 +80,42 @@ if %errorlevel%==0 (
 )
 
 if "%SYS_PYTHON%"=="" (
-    echo [ERROR] 未找到系统 Python，请先安装 Python 3.12
-    echo [ERROR] 下载地址: https://www.python.org/downloads/
+    echo [ERROR] System Python not found. Please install Python 3.12 first
+    echo [ERROR] Download: https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
 :: Check version is 3.12
 for /f "tokens=*" %%v in ('%SYS_PYTHON% -c "import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")"') do set PY_VER=%%v
-echo [INFO] 检测到系统 Python 版本: %PY_VER%
+echo [INFO] Detected system Python version: %PY_VER%
 
 if not "%PY_VER%"=="3.12" (
     echo.
-    echo [ERROR] 当前 Python 版本为 %PY_VER%，需要 3.12
-    echo [ERROR] 请下载 Python 3.12: https://www.python.org/downloads/release/python-31213/
-    echo [ERROR] 或选择便携包方式安装（重新运行 setup.bat 选择选项 1）
+    echo [ERROR] Current Python version is %PY_VER%, but 3.12 is required
+    echo [ERROR] Please download Python 3.12: https://www.python.org/downloads/release/python-31213/
+    echo [ERROR] Or use the portable package method - re-run setup.bat and select option 1
     pause
     exit /b 1
 )
 
 :: Check existing venv
 if exist "venv" (
-    echo [INFO] 检测到已有 venv 虚拟环境
-    set /p REINSTALL_VENV="是否删除并重新安装？[y/N]: "
+    echo [INFO] Existing venv virtual environment detected
+    set /p REINSTALL_VENV="Delete and reinstall? [y/N]: "
     if /i "!REINSTALL_VENV!"=="y" (
-        echo [INFO] 删除旧虚拟环境...
+        echo [INFO] Removing old virtual environment...
         rmdir /s /q venv
     ) else if /i "!REINSTALL_VENV!"=="yes" (
-        echo [INFO] 删除旧虚拟环境...
+        echo [INFO] Removing old virtual environment...
         rmdir /s /q venv
     ) else (
-        echo [INFO] 保留已有虚拟环境，跳过创建
+        echo [INFO] Keeping existing virtual environment, skipping creation
         goto :venv_activate
     )
 )
 
-echo [INFO] 创建虚拟环境...
+echo [INFO] Creating virtual environment...
 %SYS_PYTHON% -m venv venv
 
 :venv_activate
@@ -123,10 +123,10 @@ call venv\Scripts\activate.bat
 set PYTHON_MODE=venv
 set PYTHON_BIN=venv\Scripts\python.exe
 set PIP_TARGET=
-echo [INFO] 已激活 venv 虚拟环境
+echo [INFO] venv virtual environment activated
 
 :: Upgrade pip in venv
-echo [INFO] 升级 pip...
+echo [INFO] Upgrading pip...
 %PYTHON_BIN% -m pip install --upgrade pip
 goto :python_ready
 
